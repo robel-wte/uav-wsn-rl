@@ -1,0 +1,60 @@
+OMNeT++ Discrete Event Simulation  (C) 1992-2025 Andras Varga, OpenSim Ltd.
+Version: 6.3.0, build: 251110-bb3d6a4731, edition: Academic Public License -- NOT FOR COMMERCIAL USE
+See the license for distribution terms and warranty disclaimer
+
+Setting up Cmdenv...
+
+Loading NED files from .:  1
+
+Preparing for running configuration General, run #0...
+Assigned runID=General-0-20260417-12:55:22-15522
+Setting up network "UavWsnNetwork"...
+Initializing...
+MetricsCollector::setCollectionWindow(691) - uavCollectionWindowDuration now = 691
+
+Running simulation...
+** Event #0   t=0   Elapsed: 1e-05s (0m 00s)  0% completed  (0% total)
+     Speed:     ev/sec=0   simsec/sec=0   ev/simsec=0
+     Messages:  created: 103   present: 103   in FES: 102
+** Event #1915904   t=65947.143913163228   Elapsed: 2.00027s (0m 02s)  5% completed  (5% total)
+     Speed:     ev/sec=957828   simsec/sec=32969.3   ev/simsec=29.0521
+     Messages:  created: 1894991   present: 231   in FES: 230
+** Event #3853312   t=132173.597273934448   Elapsed: 4.00038s (0m 04s)  11% completed  (11% total)
+     Speed:     ev/sec=968651   simsec/sec=33111.4   ev/simsec=29.2543
+     Messages:  created: 3811242   present: 214   in FES: 213
+** Event #5846016   t=200826.566824120464   Elapsed: 6.00064s (0m 06s)  17% completed  (17% total)
+     Speed:     ev/sec=996222   simsec/sec=34322   ev/simsec=29.0258
+     Messages:  created: 5781936   present: 217   in FES: 216
+** Event #7816704   t=268357.900454106483   Elapsed: 8.00086s (0m 08s)  23% completed  (23% total)
+     Speed:     ev/sec=985236   simsec/sec=33762   ev/simsec=29.1818
+     Messages:  created: 7731130   present: 220   in FES: 219
+** Event #9799168   t=336130.709012273567   Elapsed: 10.001s (0m 10s)  28% completed  (28% total)
+     Speed:     ev/sec=991175   simsec/sec=33884.5   ev/simsec=29.2516
+     Messages:  created: 9691959   present: 245   in FES: 244
+** Event #11778816   t=404439.562599864439   Elapsed: 12.0011s (0m 12s)  34% completed  (34% total)
+     Speed:     ev/sec=989769   simsec/sec=34152.5   ev/simsec=28.9808
+     Messages:  created: 11649734   present: 217   in FES: 216
+** Event #13727744   t=469390.639978009684   Elapsed: 14.0013s (0m 14s)  40% completed  (40% total)
+     Speed:     ev/sec=974369   simsec/sec=32472.4   ev/simsec=30.0061
+     Messages:  created: 13577984   present: 213   in FES: 212
+** Event #15772928   t=547109   Elapsed: 16.0015s (0m 16s)  47% completed  (47% total)
+     Speed:     ev/sec=1.02248e+06   simsec/sec=38854.9   ev/simsec=26.3153
+     Messages:  created: 15601037   present: 110   in FES: 109
+** Event #18345472   t=686340.262977210523   Elapsed: 18.0015s (0m 18s)  59% completed  (59% total)
+     Speed:     ev/sec=1.28626e+06   simsec/sec=69614.9   ev/simsec=18.4768
+     Messages:  created: 18142202   present: 4   in FES: 3
+** Event #21200384   t=847850   Elapsed: 20.0015s (0m 20s)  73% completed  (73% total)
+     Speed:     ev/sec=1.42744e+06   simsec/sec=80754.1   ev/simsec=17.6764
+     Messages:  created: 20962641   present: 33   in FES: 32
+** Event #24071680   t=1010290   Elapsed: 22.0017s (0m 22s)  87% completed  (87% total)
+     Speed:     ev/sec=1.43556e+06   simsec/sec=81215   ev/simsec=17.676
+     Messages:  created: 23799241   present: 22   in FES: 21
+** Event #26738728   t=1161000   Elapsed: 23.8832s (0m 23s)  100% completed  (100% total)
+     Speed:     ev/sec=1.41749e+06   simsec/sec=80099.6   ev/simsec=17.6965
+     Messages:  created: 26434041   present: 3   in FES: 1
+
+<!> Simulation time limit reached -- at t=1161000s, event #26738728
+
+Calling finish() at end of Run #0...
+
+End.

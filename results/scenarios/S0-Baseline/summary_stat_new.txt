@@ -1,0 +1,99 @@
+```plaintext
+Scenario: S0-Baseline (Multi-Run Statistics)
+==================================================
+
+Description:
+Baseline - Multi-run statistics (30 runs with different seeds)
+Parameters: P=0.1, N=100, v=10m/s, E=0.5J, Size=2000b
+
+Network Lifetime:
+--------------------------------------------------
+FND (First Node Death):
+  Mean: 551 rounds
+  95% CI: ± 4.58 rounds
+  Std Dev: 12.27 rounds
+  Range: [528, 571] rounds
+
+LND (Last Node Death):
+  Mean: 876 rounds
+  95% CI: ± 19.72 rounds
+  Std Dev: 52.82 rounds
+  Range: [777, 1041] rounds
+
+Lifetime (LND - FND):
+  Mean: 325 rounds
+  95% CI: ± 20.98 rounds
+  Std Dev: 56.18 rounds
+  Range: [206, 502] rounds
+
+Energy:
+--------------------------------------------------
+Total Energy Consumed:
+  Mean: 50.1355 J
+  95% CI: ± 0.006326 J
+  Std Dev: 0.016942 J
+  Range: [50.1013, 50.1794] J
+
+Mean Energy Consumed Per Round:
+  Mean: 0.056994 J
+  Std Dev: 0.033032 J
+
+Mean Residual Energy Per Round:
+  Mean: 0.192701 J
+  Std Dev: 0.156608 J
+
+Performance Metrics:
+--------------------------------------------------
+Mean PDR:
+  Mean: 0.8382
+  95% CI: ± 0.010091
+  Std Dev: 0.027023
+  Range: [0.7911, 0.8891]
+
+Mean Delay:
+  Mean: 1153.11 s
+  95% CI: ± 11.76 s
+  Std Dev: 31.48 s
+  Range: [1087.73, 1201.13] s
+
+Median Delay:
+  Mean: 777.38 s
+  95% CI: ± 0.39 s
+  Std Dev: 1.04 s
+  Range: [775.17, 780.06] s
+
+Mean Throughput:
+  Mean: 152.99 bps (0.1530 kbps)
+  95% CI: ± 3.33 bps
+  Std Dev: 8.91 bps
+  Range: [132.80, 170.86] bps
+
+Clustering Metrics:
+--------------------------------------------------
+Mean Cluster Heads:
+  Mean: 7.56
+  95% CI: ± 0.16
+  Std Dev: 0.42
+  Range: [6.41, 8.56]
+
+Unclustered Nodes Percentage:
+  Mean: 26.87%
+  95% CI: ± 0.79%
+  Std Dev: 2.11%
+  Range: [22.73, 31.53]%
+
+Contact Performance:
+--------------------------------------------------
+Contact Success Rate:
+  Mean: 1.0000
+  Range: [1.0000, 1.0000]
+
+Control Overhead:
+--------------------------------------------------
+Mean Control Ratio:
+  Mean: 0.7393
+  95% CI: ± 0.0112
+  Std Dev: 0.0300
+  Range: [0.6410, 0.7971]
+
+```

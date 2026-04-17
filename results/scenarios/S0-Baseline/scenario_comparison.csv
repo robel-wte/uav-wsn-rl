@@ -1,0 +1,10 @@
+Scenario,Configuration,FND,LND,PDR,Avg_Delay,Avg_CHs,Throughput
+Baseline,"Baseline (N=100, P=0.1, v=10, E=0.5J)",0.0s,0.0s,0.00%,0.00s,0.0,0.00 pkt/s
+S1-A,S1-A: Low CH Prob (P=0.05),0.0s,0.0s,0.00%,0.00s,0.0,0.00 pkt/s
+S1-B,S1-B: High CH Prob (P=0.2),0.0s,0.0s,0.00%,0.00s,0.0,0.00 pkt/s
+S2-A,S2-A: Medium Density (N=200),0.0s,0.0s,0.00%,0.00s,0.0,0.00 pkt/s
+S2-B,S2-B: High Density (N=300),0.0s,0.0s,0.00%,0.00s,0.0,0.00 pkt/s
+S3-A,S3-A: Moderate Speed (v=15 m/s),0.0s,0.0s,0.00%,0.00s,0.0,0.00 pkt/s
+S3-B,S3-B: High Speed (v=20 m/s),0.0s,0.0s,0.00%,0.00s,0.0,0.00 pkt/s
+S4-A,S4-A: Double Energy (E=1.0J),N/A,N/A,N/A,N/A,N/A,N/A
+S4-B,S4-B: Quadruple Energy (E=2.0J),N/A,N/A,N/A,N/A,N/A,N/A
