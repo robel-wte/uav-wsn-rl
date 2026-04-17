@@ -1,0 +1,25 @@
+# Build and output
+out/
+results/
+plots/
+*.o
+*.d
+*.so
+*.a
+*.exe
+
+# Python
+__pycache__/
+*.pyc
+
+# OMNeT++ artifacts
+*.sca
+*.vec
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+

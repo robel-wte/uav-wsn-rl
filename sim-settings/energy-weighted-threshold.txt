@@ -1,0 +1,41 @@
+Algorithm: Energy-Weighted LEACH Cluster Head Election
+
+Input:
+    N          // Set of all sensor nodes
+    P          // Desired cluster head probability
+    r          // Current round number
+    E_i        // Residual energy of node i
+    E_avg      // Average residual energy of all alive nodes
+    G          // Set of nodes not selected as CHs in last 1/P rounds
+
+Output:
+    CH_List    // List of elected cluster heads in round r
+
+1:  CH_List ← ∅
+
+2:  For each node i ∈ N do
+
+3:      If i is alive then
+
+4:          If i ∈ G thenEnergy-weighted LEACH threshold
+6:              T_i ← ( P * (E_i / E_avg) ) / ( 1 - P * ( r mod (1/P) ) )
+5:              // 
+7:          Else
+8:              T_i ← 0
+9:          End If
+
+10:         Generate random number x ∼ U(0, 1)
+
+11:         If x < T_i then
+12:             i.status ← CLUSTER_HEAD
+13:             Add i to CH_List
+14:             Remove i from G        // Exclude from next epoch
+15:         Else
+16:             i.status ← MEMBER_NODE
+17:         End If
+
+18:     End If
+
+19: End For
+
+20: Return CH_List

@@ -1,0 +1,48 @@
+
+================================================================================
+TIMING OPTIMIZATION SUMMARY
+================================================================================
+
+QUESTION 1: Is 150s round time optimal?
+❌ NO - Only 17.5% efficiency (26.2s work, 123.8s idle)
+
+QUESTION 2: Can clustering be minimized?
+✓ YES - Reduce from 6.7s to 5.0s (25% improvement)
+  • neighborDiscoveryDelay: 0.2s → 0.1s
+  • joinAttemptDelay: 1.5s → 0.5s
+  • clusteringPhaseDelay: 2.0s → 1.0s
+
+QUESTION 3: Can time per waypoint be adaptive (T_c)?
+✓ YES - Technically feasible, 20-30% efficiency gain
+  • Requires path planning rewrite
+  • Prioritize CHs by T_c and buffer size
+  • Expected: 1.1s → 0.8s per CH (27% faster)
+
+QUESTION 4: Max collection window for all CHs?
+  • Fixed approach: 9.6s for avg CHs (8.7 CHs × 1.1s)
+  • Adaptive T_c: 6.9s for avg CHs (8.7 CHs × 0.8s)
+  • Recommended: 10s window (100% coverage)
+
+QUESTION 5: Optimal round time?
+✓ RECOMMENDED: 30 seconds
+  • Clustering: 5.0s (optimized)
+  • Aggregation: 2.0s (optimized)
+  • UAV cycle: 21.0s (10s collection + 11s overhead)
+  • Buffer: 1.0s (safety margin)
+  • Total efficiency: 96.7%
+
+COMPARISON: 150s vs 30s Rounds
+--------------------------------------------------------------------------------
+Metric                  Current (150s)    Optimized (30s)    Improvement
+--------------------------------------------------------------------------------
+Round duration          150s              30s                5x faster
+Time efficiency         17.5%             96.7%              5.5x better
+Throughput              0.0067 rounds/s   0.033 rounds/s     5x higher
+CH coverage             73%               100%               +27%
+Data collection         1.0x (baseline)   1.5x               +50%
+End-to-end latency      150s max          30s max            5x lower
+Network lifetime        Same              Same               Equal
+Operations per lifetime 1x                5x                 5x more rounds
+================================================================================
+
+FINAL VERDICT: 30s rounds with adaptive T_c provides 5x improvement

@@ -1,0 +1,71 @@
+=====================================================================
+Ideal Scenario (S_Ideal) — Metrics & Numerical Parameter Configuration
+=====================================================================
+
+1. Network Configuration (Calculated for Stability)
+---------------------------------------------------------------------
+Number of sensor nodes (N)                = 400
+Network area                             = 500 m × 500 m
+Node deployment                          = Uniform random
+Base station position (BS)               = (-50, 250)    // Center-left edge
+UAV altitude                             = 30 m
+UAV speed                                = 10 m/s
+UAV mobility model                      = Raster Scan + Breadcrumb
+UAV communication range (Ru)             = 150 m
+Node transmission range (Rc)             = 100 m
+Initial energy per node (E0)             = 0.5 J
+CH probability (p)                       = 0.1           // Results in ~40 CHs
+Expected cluster size                   = 10 nodes
+
+2. Radio & Energy Model (First Order Radio Model)
+---------------------------------------------------------------------
+Electronics energy (E_elec)              = 50 nJ/bit
+Transmit amplifier (free space) ε_fs    = 10 pJ/bit/m^2
+Transmit amplifier (multi-path) ε_mp    = 0.0013 pJ/bit/m^4
+Data aggregation energy (E_DA)           = 5 nJ/bit
+Packet size (k)                          = 2000 bits
+Control packet size                     = 200 bits
+Crossover distance (d0)                  ≈ 87 m
+
+3. UAV Collection Parameters (Dynamic)
+---------------------------------------------------------------------
+Data rate                                = 2 Mbps
+Raster step size                         = 250 m         // 2 passes for 500m area
+Discovery beacon interval                = 0.5 s
+Max deviation for breadcrumb             = 200 m
+Link assessment (Algorithm 3)            = Tc >= Treq (Calculated per visit)
+
+4. Routing & Operation Timing (Calculated for 400 Nodes)
+---------------------------------------------------------------------
+Total Round duration (T_round)           = 180 s         // Scaled for 500m travel
+Clustering phase duration               = 10 s          // Time for 400 nodes to sync
+Data transmission phase (SN to CH)       = 20 s          // Larger TDMA frame
+UAV collection phase                     = 140 s         // Flight + Hover + Deviation
+UAV return + BS upload phase            = 10 s
+
+5. Metrics Collected Per Round (Verification Set)
+---------------------------------------------------------------------
+Alive nodes / Dead nodes
+Total residual energy (J)
+Energy consumed per round (J)            // Aggregate of 400 nodes
+Packet delivery ratio (PDR)              // (BS Recv / Node Gen)
+Throughput (bits/round)                  // Aggregated bits at BS
+Average end-to-end delay (s)             // (T_bs_recv - T_node_gen)
+Control packet overhead ratio            // (Control bits / Total bits)
+UAV contact window (Tc)                  // Geometric air-time per CH
+Breadcrumb hit rate                      // CHs found via L_nbr vs Raster
+Isolated nodes count                     // Nodes with 0 CHs in 100m range
+
+6. Expected Analytical Baseline Values (Scenario S_Ideal)
+---------------------------------------------------------------------
+Energy consumption per round            ≈ 0.143 J       // Higher due to N=400
+First node dies (FND)                   ≈ 950 rounds    // Balanced by energy-aware T(n)
+Half nodes alive                        ≈ 1300 rounds
+Last node dies (LND)                    ≈ 1800 rounds
+Initial throughput                      ≈ 780,000 bits/round
+Initial PDR                             ≈ 0.991
+Initial average delay                   ≈ 45.0 s        // Dominated by UAV flight time
+Final average delay                     ≈ 120.0 s
+Final PDR                               ≈ 0.15
+
+=====================================================================

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>uav-wsn-bm</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.omnetpp.ide.core.omnetppBuilder</name>
+			<arguments/>
+		</buildCommand>
+	</buildSpec>
+	<persistentProperties>
+		<property>
+			<key>omnetpp.nedSourceFolders</key>
+			<value>.</value>
+		</property>
+	</persistentProperties>
+	<natures>
+		<nature>org.omnetpp.ide.core.omnetppNature</nature>
+		<nature>org.eclipse.cdt.core.cnature</nature>
+		<nature>org.eclipse.cdt.core.ccnature</nature>
+		<nature>org.eclipse.cdt.make.core.makeNature</nature>
+	</natures>
+</projectDescription>

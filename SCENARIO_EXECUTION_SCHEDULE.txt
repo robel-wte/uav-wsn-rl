@@ -1,0 +1,300 @@
+
+================================================================================
+UAV-WSN SCENARIO EXECUTION SCHEDULE
+================================================================================
+Date: January 20, 2026
+Total Scenarios: 4 (S1, S2, S3, S4)
+Total Configurations: 8 (excluding 4 baseline runs already completed)
+Baseline (S1-B, S2-A, S3-A, S4-A): COMPLETED - 30 runs validated
+
+**Note:** All scenario schedules, timings, and folder structures in this file reflect the current simulation state and are consistent with the latest scenario results and timings (see RESULTS_AND_DISCUSSION.md).
+
+================================================================================
+FOLDER STRUCTURE
+================================================================================
+
+results/
+├── baseline/                    # S1-B, S2-A, S3-A, S4-A (COMPLETED)
+│   ├── run-0/ to run-29/       # 30 validated runs
+│   ├── statistical_summary.csv
+│   ├── validation_plots/
+│   └── ...
+│
+├── scenario-s1/                 # CH Probability Variations
+│   ├── s1a-p005/               # P=0.05 (Low CH probability)
+│   │   ├── run-0/ to run-9/    # 10 independent runs
+│   │   ├── logs/
+│   │   ├── statistical_summary.csv
+│   │   └── validation_plots/
+│   │
+│   └── s1c-p020/               # P=0.20 (High CH probability)
+│       ├── run-0/ to run-9/
+│       ├── logs/
+│       ├── statistical_summary.csv
+│       └── validation_plots/
+│
+├── scenario-s2/                 # Node Density Variations
+│   ├── s2b-n200/               # N=200 (Medium density)
+│   │   ├── run-0/ to run-9/
+│   │   ├── logs/
+│   │   ├── statistical_summary.csv
+│   │   └── validation_plots/
+│   │
+│   └── s2c-n300/               # N=300 (High density)
+│       ├── run-0/ to run-9/
+│       ├── logs/
+│       ├── statistical_summary.csv
+│       └── validation_plots/
+│
+├── scenario-s3/                 # UAV Speed Variations
+│   ├── s3b-v15/                # v=15 m/s (Medium speed)
+│   │   ├── run-0/ to run-9/
+│   │   ├── logs/
+│   │   ├── statistical_summary.csv
+│   │   └── validation_plots/
+│   │
+│   └── s3c-v20/                # v=20 m/s (High speed)
+│       ├── run-0/ to run-9/
+│       ├── logs/
+│       ├── statistical_summary.csv
+│       └── validation_plots/
+│
+└── scenario-s4/                 # Initial Energy Variations
+    ├── s4b-e10/                # E=1.0 J (Medium energy)
+    │   ├── run-0/ to run-9/
+    │   ├── logs/
+    │   ├── statistical_summary.csv
+    │   └── validation_plots/
+    │
+    └── s4c-e20/                # E=2.0 J (High energy)
+        ├── run-0/ to run-9/
+        ├── logs/
+        ├── statistical_summary.csv
+        └── validation_plots/
+
+
+================================================================================
+EXECUTION SCHEDULE
+================================================================================
+
+Total Estimated Time: ~40 minutes (8 configurations × 10 runs × ~30s per run)
+Recommended: Run sequentially to avoid resource conflicts
+
+--------------------------------------------------------------------------------
+SCENARIO S1: CH Probability Variations
+--------------------------------------------------------------------------------
+
+Configuration S1-A (P=0.05):
+  Parameter Change               : *.node[*].chProbability = 0.05
+  Number of Runs                 : 10 (seeds 0-9)
+  Output Directory               : results/scenario-s1/s1a-p005/
+  Estimated Time                 : ~5 minutes
+  Expected Outcome               : Fewer CHs, higher unclustered %, lower PDR
+
+Configuration S1-C (P=0.20):
+  Parameter Change               : *.node[*].chProbability = 0.2
+  Number of Runs                 : 10 (seeds 0-9)
+  Output Directory               : results/scenario-s1/s1c-p020/
+  Estimated Time                 : ~5 minutes
+  Expected Outcome               : More CHs, lower unclustered %, higher overhead
+
+--------------------------------------------------------------------------------
+SCENARIO S2: Node Density Variations
+--------------------------------------------------------------------------------
+
+Configuration S2-B (N=200):
+  Parameter Change               : *.numNodes = 200
+  Number of Runs                 : 10 (seeds 0-9)
+  Output Directory               : results/scenario-s2/s2b-n200/
+  Estimated Time                 : ~7 minutes (more nodes = longer execution)
+  Expected Outcome               : ~20 CHs, better connectivity, faster energy depletion
+
+Configuration S2-C (N=300):
+  Parameter Change               : *.numNodes = 300
+  Number of Runs                 : 10 (seeds 0-9)
+  Output Directory               : results/scenario-s2/s2c-n300/
+  Estimated Time                 : ~10 minutes (3x nodes = longer execution)
+  Expected Outcome               : ~30 CHs, excellent connectivity, high overhead
+
+--------------------------------------------------------------------------------
+SCENARIO S3: UAV Speed Variations
+--------------------------------------------------------------------------------
+
+Configuration S3-B (v=15 m/s):
+  Parameter Changes              : *.uav.minSpeed = 15mps
+                                   *.uav.maxSpeed = 15mps
+                                   *.uav.searchSpeed = 15mps
+  Number of Runs                 : 10 (seeds 0-9)
+  Output Directory               : results/scenario-s3/s3b-v15/
+  Estimated Time                 : ~5 minutes
+  Expected Outcome               : Lower delay, shorter contact time, higher throughput
+
+Configuration S3-C (v=20 m/s):
+  Parameter Changes              : *.uav.minSpeed = 20mps
+                                   *.uav.maxSpeed = 20mps
+                                   *.uav.searchSpeed = 20mps
+  Number of Runs                 : 10 (seeds 0-9)
+  Output Directory               : results/scenario-s3/s3c-v20/
+  Estimated Time                 : ~5 minutes
+  Expected Outcome               : Minimum delay, risk of contact failures, max throughput
+
+--------------------------------------------------------------------------------
+SCENARIO S4: Initial Energy Variations
+--------------------------------------------------------------------------------
+
+Configuration S4-B (E=1.0 J):
+  Parameter Change               : *.node[*].initialEnergy = 1.0J
+  Number of Runs                 : 10 (seeds 0-9)
+  Output Directory               : results/scenario-s4/s4b-e10/
+  Estimated Time                 : ~10 minutes (2x lifetime = longer execution)
+  Expected Outcome               : FND≈1100, LND≈1750, 2x packet delivery
+
+Configuration S4-C (E=2.0 J):
+  Parameter Change               : *.node[*].initialEnergy = 2.0J
+  Number of Runs                 : 10 (seeds 0-9)
+  Output Directory               : results/scenario-s4/s4c-e20/
+  Estimated Time                 : ~20 minutes (4x lifetime = much longer execution)
+  Expected Outcome               : FND≈2200, LND≈3500, 4x packet delivery
+
+
+================================================================================
+EXECUTION COMMANDS
+================================================================================
+
+Setup:
+  # Create directory structure
+  mkdir -p results/scenario-s1/{s1a-p005,s1c-p020}
+  mkdir -p results/scenario-s2/{s2b-n200,s2c-n300}
+  mkdir -p results/scenario-s3/{s3b-v15,s3c-v20}
+  mkdir -p results/scenario-s4/{s4b-e10,s4c-e20}
+
+S1-A (P=0.05):
+  ./run_scenario.sh s1a-p005 10 "chProbability=0.05"
+
+S1-C (P=0.20):
+  ./run_scenario.sh s1c-p020 10 "chProbability=0.2"
+
+S2-B (N=200):
+  ./run_scenario.sh s2b-n200 10 "numNodes=200"
+
+S2-C (N=300):
+  ./run_scenario.sh s2c-n300 10 "numNodes=300"
+
+S3-B (v=15 m/s):
+  ./run_scenario.sh s3b-v15 10 "uavSpeed=15"
+
+S3-C (v=20 m/s):
+  ./run_scenario.sh s3c-v20 10 "uavSpeed=20"
+
+S4-B (E=1.0 J):
+  ./run_scenario.sh s4b-e10 10 "initialEnergy=1.0"
+
+S4-C (E=2.0 J):
+  ./run_scenario.sh s4c-e20 10 "initialEnergy=2.0"
+
+
+================================================================================
+VALIDATION & ANALYSIS
+================================================================================
+
+After Each Configuration:
+  1. Extract metrics using extract_metrics.py
+  2. Generate statistical summary using analyze_multi_run.py
+  3. Create validation plots
+  4. Compare against baseline results
+
+Post-Execution Analysis:
+  # Analyze S1 variations
+  python3 compare_scenarios.py --scenario s1 --baseline results/baseline
+
+  # Analyze S2 variations
+  python3 compare_scenarios.py --scenario s2 --baseline results/baseline
+
+  # Analyze S3 variations
+  python3 compare_scenarios.py --scenario s3 --baseline results/baseline
+
+  # Analyze S4 variations
+  python3 compare_scenarios.py --scenario s4 --baseline results/baseline
+
+  # Generate comprehensive comparison
+  python3 generate_scenario_comparison.py --all
+
+
+================================================================================
+DELIVERABLES
+================================================================================
+
+Per Configuration:
+  ✓ 10 complete simulation runs (CSV files + logs)
+  ✓ Statistical summary (mean ± 95% CI for all metrics)
+  ✓ Variance analysis (CV for reproducibility)
+  ✓ 8 validation plots (box plots + distributions)
+  ✓ Configuration-specific analysis report
+
+Per Scenario:
+  ✓ Comparative analysis across all configurations
+  ✓ Performance vs. parameter plots (e.g., FND vs. P)
+  ✓ Trend analysis and insights
+  ✓ Recommendations for optimal parameter selection
+
+Overall:
+  ✓ Comprehensive scenario comparison report
+  ✓ Multi-dimensional performance analysis
+  ✓ Protocol characterization and limitations
+  ✓ Publication-ready results with statistical validation
+
+
+================================================================================
+EXECUTION CHECKLIST
+================================================================================
+
+Pre-Execution:
+  [ ] Baseline results archived (already done: results/multi-run/)
+  [ ] Directory structure created
+  [ ] Execution scripts prepared (run_scenario.sh)
+  [ ] Analysis scripts ready (compare_scenarios.py)
+  [ ] Sufficient disk space (~2 GB for all scenarios)
+
+During Execution (per configuration):
+  [ ] Monitor progress logs
+  [ ] Verify CSV file generation
+  [ ] Check simulation completion (t=1161000s)
+  [ ] Verify no crashes or errors
+
+Post-Execution (per configuration):
+  [ ] Extract metrics from all runs
+  [ ] Generate statistical summary
+  [ ] Create validation plots
+  [ ] Compare with baseline
+  [ ] Archive raw results
+
+Final:
+  [ ] All 8 configurations completed
+  [ ] Comprehensive comparison report generated
+  [ ] Results validated and documented
+  [ ] Commit and push to repository
+
+
+================================================================================
+NOTES
+================================================================================
+
+Baseline Results Location:
+  All baseline results (N=100, P=0.1, v=10m/s, E=0.5J) are in:
+  - results/multi-run/ (30 runs)
+  - Validated statistics available for comparison
+
+Execution Recommendations:
+  1. Run configurations sequentially to avoid memory/CPU conflicts
+  2. Monitor disk space (each run generates ~15-20 MB of data)
+  3. Verify simulation completion before starting next configuration
+  4. Save logs for debugging if issues occur
+  5. Consider running S4-C (2.0J) overnight due to long execution time
+
+Expected Total Data Size:
+  - 8 configurations × 10 runs × ~20 MB = ~1.6 GB
+  - Plus analysis outputs and plots: ~2 GB total
+
+================================================================================
+END OF SCHEDULE
+================================================================================
