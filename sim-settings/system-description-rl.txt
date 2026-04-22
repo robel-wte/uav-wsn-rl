@@ -547,12 +547,13 @@ METRICS TO BE COLLECTED
     Buffer Overflow Rate: The percentage of packets dropped at Cluster Heads due to full buffers. This specifically validates your RCLF "Data Pressure" mechanism—if the UAV "flows" toward high-demand CHs correctly, this rate should be near zero.
 3. RL/Learning Convergence Metrics
     Learning Convergence Curve: A plot of the Moving Average Reward vs. Training Rounds. It should show a clear upward trend that stabilizes as the Q-table converges.
+    (OR, Convergence Speed: The number of simulation rounds required for the total reward to stabilize.)
     Exploration vs. Exploitation Trade-off: Plot the number of random actions ($\epsilon$) taken over time to show that the system successfully transitions from exploring the environment to optimizing the routing path.
     State-Space Coverage: A heatmap of the network area showing how often the UAV visited different regions. This proves the RCLF mobility effectively covers the network field rather than hovering in one "rich" area.
 4. UAV-Specific Mobility Metrics
     Trajectory Efficiency Index (TEI): The ratio of "Information Collected" to "Distance Traveled" by the UAV. This proves that the RCLF-Q movement is more purposeful than random or fixed-path mobility.
     UAV Contact Duration: The average time the UAV stays within the communication range of a CH. This evaluates whether the RL agent has learned to "slow down" or "hover" when data pressure is high.
-    
+
 
 
 
