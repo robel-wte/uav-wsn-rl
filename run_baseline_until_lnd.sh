@@ -18,7 +18,7 @@ cd "$PROJECT_DIR"
 
 # Load OMNeT++ environment
 echo -e "${BLUE}Loading OMNeT++ environment...${NC}"
-# source /workspaces/omnetpp-setup.sh
+source /home/wte/omnetpp/omnetpp-6.3.0/setenv
 
 echo -e "${YELLOW}=========================================${NC}"
 echo -e "${YELLOW}  UAV-WSN-BM: Baseline S0 Runner (LND)   ${NC}"

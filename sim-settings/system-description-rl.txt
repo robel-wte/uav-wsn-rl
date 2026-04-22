@@ -536,10 +536,23 @@ update Q-table
 ---------------------------------
 METRICS TO BE COLLECTED
 ---------------------------------
-
-
-
-
+1. Stability and Longevity Metrics
+    First Node Death (FND) Round: The specific round number at which the first sensor node exhausts its energy. This is the gold standard for network stability.
+    Network Lifetime (Last Node Death - LND): The point where the network can no longer maintain coverage.
+2. Performance and Quality of Service (QoS)
+    Average End-to-End Delay: The average time taken for a packet to travel from the source node to the Base Station. Include a Cumulative Distribution Function (CDF) of delay to show the jitter and consistency.
+    Packet Delivery Ratio (PDR): The ratio of packets successfully received by the Base Station to the total packets sent.
+    Control Overhead Ratio: The ratio of control packets (RCLF signaling, CH advertisements) to data packets. Since your protocol is RL-based, you must prove that the "learning" and "RCLF updates" do not consume more energy than they save.
+    Data Latency per Round: Given the UAV's mobility, plot the latency vs. the distance of the UAV from the BS to show how the protocol adapts to the UAV's flight path.
+    Buffer Overflow Rate: The percentage of packets dropped at Cluster Heads due to full buffers. This specifically validates your RCLF "Data Pressure" mechanism—if the UAV "flows" toward high-demand CHs correctly, this rate should be near zero.
+3. RL/Learning Convergence Metrics
+    Learning Convergence Curve: A plot of the Moving Average Reward vs. Training Rounds. It should show a clear upward trend that stabilizes as the Q-table converges.
+    Exploration vs. Exploitation Trade-off: Plot the number of random actions ($\epsilon$) taken over time to show that the system successfully transitions from exploring the environment to optimizing the routing path.
+    State-Space Coverage: A heatmap of the network area showing how often the UAV visited different regions. This proves the RCLF mobility effectively covers the network field rather than hovering in one "rich" area.
+4. UAV-Specific Mobility Metrics
+    Trajectory Efficiency Index (TEI): The ratio of "Information Collected" to "Distance Traveled" by the UAV. This proves that the RCLF-Q movement is more purposeful than random or fixed-path mobility.
+    UAV Contact Duration: The average time the UAV stays within the communication range of a CH. This evaluates whether the RL agent has learned to "slow down" or "hover" when data pressure is high.
+    
 
 
 

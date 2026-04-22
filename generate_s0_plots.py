@@ -69,4 +69,48 @@ try:
 except Exception as ex:
     print('Stability plot failed:', ex)
 
+# End-to-End Delay histogram
+try:
+    d = pd.read_csv(os.path.join(BASE,'delay.csv'))
+    plt.figure(figsize=(8,4))
+    plt.hist(d['Delay_s'], bins=50, edgecolor='black')
+    plt.xlabel('End-to-End Delay (s)')
+    plt.ylabel('Number of Packets')
+    plt.title('S0-Baseline: End-to-End Delay Distribution')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUT,'delay_histogram.png'))
+    plt.close()
+except Exception as ex:
+    print('Delay plot failed:', ex)
+
+# Control Overhead Ratio
+try:
+    o = pd.read_csv(os.path.join(BASE,'overhead.csv'))
+    plt.figure(figsize=(8,4))
+    plt.plot(o['Round'], o['OverheadRatio'], '-o')
+    plt.xlabel('Round')
+    plt.ylabel('Control Overhead Ratio')
+    plt.title('S0-Baseline: Control Overhead Ratio per Round')
+    plt.ylim(0,1)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUT,'overhead_ratio.png'))
+    plt.close()
+    
+    # Control and Data Packets in same plot
+    plt.figure(figsize=(8,4))
+    plt.plot(o['Round'], o['ControlPackets'], '-o', label='Control Packets')
+    plt.plot(o['Round'], o['DataPackets'], '-s', label='Data Packets')
+    plt.xlabel('Round')
+    plt.ylabel('Number of Packets')
+    plt.title('S0-Baseline: Control and Data Packets per Round')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUT,'control_data_packets.png'))
+    plt.close()
+except Exception as ex:
+    print('Overhead plot failed:', ex)
+
 print('Plots saved to', OUT)
