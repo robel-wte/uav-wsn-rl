@@ -84,18 +84,20 @@ void SensorNode::initialize()
         topo << getIndex() << "," << myLocation.x << "," << myLocation.y << "\n";
     }
     
-    // Initialize RL parameters
-    alpha = 0.1;
-    gamma = 0.9;
-    epsilon = 0.1;
+    // Initialize RL parameters (from parameters-init.txt)
+    alpha_node = 0.15;
+    gamma_node = 0.6;
+    epsilon_node = 0.2;
+    epsilon_min = 0.05;
+    epsilon_decay_node = 0.002;
     
-    // Initialize last states
-    lastNodeState = {0,0,0,0};
-    lastCHState = {0,0,0,0,0};
-    lastNodeAction = JOIN;
-    lastCHAction = BUFFER;
-    lastNodeReward = 0.0;
-    lastCHReward = 0.0;
+    alpha_ch = 0.1;
+    gamma_ch = 0.85;
+    epsilon_ch = 0.25;
+    epsilon_decay_ch = 0.0015;
+    
+    // Initialize UAV beacon tracking
+    uavProximityHistory = 0.0;  // Start with no UAV proximity knowledge
     
     startRoundMsg = new cMessage("startRound");
     // GLOBAL SYNC: Schedule first round start at t=0 for ALL nodes
@@ -898,25 +900,42 @@ void SensorNode::handleMessage(cMessage *msg)
             EV << "CH " << getIndex() << " discovered neighbor CH " << senderId << endl;
         }
         delete msg;
-    } else if (!strcmp(msg->getName(), "DISCOVERY_BEACON")) {
-        // Respond to UAV discovery if node has buffered data OR is an unclustered node that just generated packets
-        // This ensures unclustered nodes participate in data collection
-        // Range filtering will be done by UAV when it arrives at waypoint
-        bool hasData = (aggregatedDataSize > 0) || (!aggregatedPacketIDs.empty());
+    } else if (!strcmp(msg->getName(), "HELLO")) {
+        // Record UAV beacon for proximity tracking
+        recentUAVBeacons.push_back(simTime());
         
-        if (hasData) {
-            cMessage *response = new cMessage("CH_RESPONSE");
-            response->addPar("chID") = getIndex();
-            response->addPar("locationX") = myLocation.x;
-            response->addPar("locationY") = myLocation.y;
-            response->addPar("dataSize") = (aggregatedDataSize > 0 ? aggregatedDataSize : (int)(aggregatedPacketIDs.size() * dataPacketSize));
-            response->addPar("aggComplete") = 1;  // Mark as ready for collection
+        // Extract HELLO parameters
+        int uavID = msg->par("uavID");
+        double uavX = msg->par("currentPosX");
+        double uavY = msg->par("currentPosY");
+        double uavZ = msg->par("currentPosZ");
+        double missionTimeRemain = msg->par("missionTimeRemain");
+        
+        // Respond with STATUS if node is CH or has data
+        if (status == CLUSTER_HEAD || aggregatedDataSize > 0) {
+            cMessage *statusMsg = new cMessage("STATUS");
+            statusMsg->addPar("nodeID") = getIndex();
+            statusMsg->addPar("queueSize") = aggregatedDataSize;
+            
+            // Calculate average packet age
+            double avgAge = 0.0;
+            for (int pid : aggregatedPacketIDs) {
+                if (packetGenRounds.count(pid)) {
+                    int ageRounds = roundNum - packetGenRounds[pid];
+                    avgAge += ageRounds;
+                }
+            }
+            if (!aggregatedPacketIDs.empty()) {
+                avgAge /= aggregatedPacketIDs.size();
+            }
+            statusMsg->addPar("avgPacketAge") = avgAge;
+            statusMsg->addPar("residualEnergy") = energy;
             
             cModule *uav = getParentModule()->getSubmodule("uav");
             if (uav) {
-                sendDirect(response, uav, "directIn");
-                std::string nodeType = (status == CLUSTER_HEAD) ? "CH" : "Independent/Unclustered";
-                EV << nodeType << " node " << getIndex() << " responded to UAV discovery beacon" << endl;
+                sendDirect(statusMsg, uav, "directIn");
+                EV << "Node " << getIndex() << " sent STATUS to UAV: queue=" << aggregatedDataSize 
+                   << ", age=" << avgAge << ", energy=" << energy << endl;
             }
         }
         delete msg;
@@ -1099,8 +1118,23 @@ SensorNode::NodeState SensorNode::observeNodeState() {
     else if (neighborCount < 15) state.neighborDensity = 1; // MODERATE
     else state.neighborDensity = 2; // DENSE
     
-    // UAV proximity (simplified - assume low for now)
-    state.uavProximity = 0; // LOW - would need UAV position tracking
+    // UAV proximity based on beacon history
+    // Clean old beacons (older than 1 round)
+    simtime_t cutoff = simTime() - roundDuration;
+    recentUAVBeacons.erase(
+        std::remove_if(recentUAVBeacons.begin(), recentUAVBeacons.end(),
+                      [cutoff](simtime_t t) { return t < cutoff; }),
+        recentUAVBeacons.end()
+    );
+    
+    // Update proximity history (exponential moving average)
+    double recentBeaconCount = recentUAVBeacons.size();
+    double timeSinceLastBeacon = recentUAVBeacons.empty() ? roundDuration.dbl() : 
+                                (simTime() - recentUAVBeacons.back()).dbl();
+    double proximityScore = std::max(0.0, 1.0 - (timeSinceLastBeacon / roundDuration.dbl()));
+    uavProximityHistory = 0.8 * uavProximityHistory + 0.2 * proximityScore;
+    
+    state.uavProximity = (uavProximityHistory > 0.5) ? 1 : 0; // HIGH : LOW
     
     return state;
 }
@@ -1123,8 +1157,8 @@ SensorNode::CHState SensorNode::observeCHState() {
     // Age level (simplified - average packet age)
     state.ageLevel = 0; // FRESH - would need packet age tracking
     
-    // UAV proximity
-    state.uavProximity = 0; // FAR - would need UAV beacon tracking
+    // UAV proximity based on beacon history
+    state.uavProximity = (uavProximityHistory > 0.5) ? 1 : 0; // NEAR : FAR
     
     // Neighbor distance
     state.neighborDist = 1; // FAR - would need neighbor CH tracking
@@ -1136,8 +1170,11 @@ SensorNode::NodeAction SensorNode::selectNodeAction(NodeState state) {
     auto stateKey = std::make_tuple(state.energyLevel, state.distanceLevel, 
                                    state.neighborDensity, state.uavProximity);
     
+    // Epsilon decay
+    epsilon_node = std::max(epsilon_min, epsilon_node * exp(-epsilon_decay_node * roundNum));
+    
     // Epsilon-greedy
-    if (uniform(0,1) < epsilon) {
+    if (uniform(0,1) < epsilon_node) {
         return static_cast<NodeAction>(intrand(3)); // Random action
     }
     
@@ -1159,8 +1196,11 @@ SensorNode::CHAction SensorNode::selectCHAction(CHState state) {
     auto stateKey = std::make_tuple(state.energyLevel, state.queueLevel, 
                                    state.ageLevel, state.uavProximity, state.neighborDist);
     
+    // Epsilon decay
+    epsilon_ch = std::max(epsilon_min, epsilon_ch * exp(-epsilon_decay_ch * roundNum));
+    
     // Epsilon-greedy
-    if (uniform(0,1) < epsilon) {
+    if (uniform(0,1) < epsilon_ch) {
         return static_cast<CHAction>(intrand(3));
     }
     
@@ -1181,13 +1221,41 @@ SensorNode::CHAction SensorNode::selectCHAction(CHState state) {
 double SensorNode::computeNodeReward(NodeAction action) {
     double reward = 0.0;
     
-    // Basic reward structure
-    if (action == JOIN && chTarget >= 0) reward += 1.0; // Successful join
-    else if (action == SELF_CH && status == CLUSTER_HEAD) reward += 0.5; // Became CH
-    else if (action == WAIT_UAV) reward += 0.2; // Conservative choice
+    // Reward for successful clustering (delivery potential)
+    if (action == JOIN && chTarget >= 0) {
+        reward += 0.8; // Successful join increases delivery probability
+    } else if (action == SELF_CH && status == CLUSTER_HEAD) {
+        reward += 0.6; // Becoming CH helps network coverage
+    } else if (action == WAIT_UAV && uavProximityHistory > 0.7) {
+        reward += 0.4; // Good choice when UAV is near
+    }
     
-    // Energy penalty
-    reward -= (initialEnergy - energy) * 0.01;
+    // Penalty for energy consumption
+    double energyConsumed = initialEnergy - energy;
+    reward -= energyConsumed * 0.1; // Scale energy penalty
+    
+    // Penalty for delay (if data is buffered too long)
+    if (aggregatedDataSize > 0) {
+        double avgPacketAge = 0.0;
+        for (int pid : aggregatedPacketIDs) {
+            if (packetGenRounds.count(pid)) {
+                int ageRounds = roundNum - packetGenRounds[pid];
+                avgPacketAge += ageRounds;
+            }
+        }
+        if (!aggregatedPacketIDs.empty()) {
+            avgPacketAge /= aggregatedPacketIDs.size();
+            reward -= avgPacketAge * 0.2; // Delay penalty
+        }
+    }
+    
+    // Penalty for starvation (no data collected)
+    if (aggregatedDataSize == 0 && roundNum > 1) {
+        reward -= 0.3; // Starvation penalty
+    }
+    
+    // Normalize reward to [-1, 1]
+    reward = std::max(-1.0, std::min(1.0, reward));
     
     return reward;
 }
@@ -1195,14 +1263,44 @@ double SensorNode::computeNodeReward(NodeAction action) {
 double SensorNode::computeCHReward(CHAction action) {
     double reward = 0.0;
     
-    // Basic reward structure
-    if (action == TRANSMIT_TO_UAV) reward += 0.5; // Attempted transmission
-    if (action == BUFFER) reward += 0.1; // Conservative
-    if (action == FORWARD_TO_CH) reward += 0.3; // Multi-hop
+    // Reward for successful data delivery
+    if (action == TRANSMIT_TO_UAV && aggregatedDataSize == 0) {
+        reward += 1.0; // Data was collected by UAV
+    } else if (action == FORWARD_TO_CH && !neighborCHList.empty()) {
+        reward += 0.7; // Successful forwarding
+    } else if (action == BUFFER) {
+        reward += 0.2; // Conservative buffering
+    }
     
-    // Energy and queue penalties
-    reward -= (initialEnergy - energy) * 0.01;
-    reward -= aggregatedDataSize * 0.001;
+    // Penalty for energy consumption
+    double energyConsumed = initialEnergy - energy;
+    reward -= energyConsumed * 0.1;
+    
+    // Penalty for delay (packet age)
+    double avgPacketAge = 0.0;
+    for (int pid : aggregatedPacketIDs) {
+        if (packetGenRounds.count(pid)) {
+            int ageRounds = roundNum - packetGenRounds[pid];
+            avgPacketAge += ageRounds;
+        }
+    }
+    if (!aggregatedPacketIDs.empty()) {
+        avgPacketAge /= aggregatedPacketIDs.size();
+        reward -= avgPacketAge * 0.3; // Higher delay penalty for CH
+    }
+    
+    // Penalty for starvation (no data collected from members)
+    if (joinedMembers.empty() && status == CLUSTER_HEAD) {
+        reward -= 0.4; // CH with no members
+    }
+    
+    // Penalty for buffer overflow
+    if (aggregatedDataSize > maxBufferSize) {
+        reward -= 0.5; // Buffer overflow
+    }
+    
+    // Normalize reward to [-1, 1]
+    reward = std::max(-1.0, std::min(1.0, reward));
     
     return reward;
 }
@@ -1218,7 +1316,7 @@ void SensorNode::updateNodeQTable(NodeState state, NodeAction action, double rew
         maxNextQ = std::max(maxNextQ, qTableNode[nextStateKey][static_cast<NodeAction>(a)]);
     }
     
-    qTableNode[stateKey][action] += alpha * (reward + gamma * maxNextQ - qTableNode[stateKey][action]);
+    qTableNode[stateKey][action] += alpha_node * (reward + gamma_node * maxNextQ - qTableNode[stateKey][action]);
 }
 
 void SensorNode::updateCHQTable(CHState state, CHAction action, double reward, CHState nextState) {
@@ -1232,7 +1330,7 @@ void SensorNode::updateCHQTable(CHState state, CHAction action, double reward, C
         maxNextQ = std::max(maxNextQ, qTableCH[nextStateKey][static_cast<CHAction>(a)]);
     }
     
-    qTableCH[stateKey][action] += alpha * (reward + gamma * maxNextQ - qTableCH[stateKey][action]);
+    qTableCH[stateKey][action] += alpha_ch * (reward + gamma_ch * maxNextQ - qTableCH[stateKey][action]);
 }
 
 void SensorNode::performNodeRLRefinement() {
@@ -1278,9 +1376,27 @@ void SensorNode::performNodeRLRefinement() {
         }
     }
     
-    // Store for update
+    // Compute reward and update Q-table
+    double reward = computeNodeReward(action);
+    NodeState nextState = observeNodeState();
+    updateNodeQTable(lastNodeState, lastNodeAction, lastNodeReward, currentState);
+    
+    // Record RL metrics
+    if (metrics) {
+        metrics->recordRLReward(roundNum, reward);
+        bool isExploration = (uniform(0,1) < epsilon_node); // Approximation
+        metrics->recordRLAction(roundNum, isExploration);
+        std::string stateHash = std::to_string(currentState.energyLevel) + "," + 
+                               std::to_string(currentState.distanceLevel) + "," +
+                               std::to_string(currentState.neighborDensity) + "," +
+                               std::to_string(currentState.uavProximity);
+        metrics->recordRLStateVisit(stateHash);
+    }
+    
+    // Store for next update
     lastNodeState = currentState;
     lastNodeAction = action;
+    lastNodeReward = reward;
 }
 
 void SensorNode::performCHRLRouting() {
@@ -1324,7 +1440,26 @@ void SensorNode::performCHRLRouting() {
         }
     }
     
-    // Store for update
+    // Compute reward and update Q-table
+    double reward = computeCHReward(action);
+    CHState nextState = observeCHState();
+    updateCHQTable(lastCHState, lastCHAction, lastCHReward, currentState);
+    
+    // Record RL metrics
+    if (metrics) {
+        metrics->recordRLReward(roundNum, reward);
+        bool isExploration = (uniform(0,1) < epsilon_ch); // Approximation
+        metrics->recordRLAction(roundNum, isExploration);
+        std::string stateHash = std::to_string(currentState.energyLevel) + "," + 
+                               std::to_string(currentState.queueLevel) + "," +
+                               std::to_string(currentState.ageLevel) + "," +
+                               std::to_string(currentState.uavProximity) + "," +
+                               std::to_string(currentState.neighborDist);
+        metrics->recordRLStateVisit(stateHash);
+    }
+    
+    // Store for next update
     lastCHState = currentState;
     lastCHAction = action;
+    lastCHReward = reward;
 }

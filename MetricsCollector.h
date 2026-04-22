@@ -98,8 +98,12 @@ private:
     };
     std::vector<ContactEvent> contactEvents;
     
-    // Energy tracking
-    std::vector<double> nodeEnergies;
+    // RL Convergence Metrics
+    std::ofstream rlConvergenceFile;
+    std::map<int, double> roundRewards;  // round -> average reward
+    std::map<int, int> roundExplorationActions;  // round -> number of random actions
+    std::map<int, int> roundTotalActions;  // round -> total actions taken
+    std::map<std::string, int> stateSpaceCoverage;  // state hash -> visit count
     
     MetricsCollector();
     
@@ -173,12 +177,11 @@ public:
     bool hasLndRecorded() const { return lndRecorded; }
     int getCurrentRound() const { return currentRound; }
     
-    // Global synchronization functions
-    simtime_t getRoundStartTime(int roundNum) const;
-    simtime_t getClusteringPhaseEnd() const;
-    simtime_t getUAVCollectionWindowStart(int roundNum) const;
-    simtime_t getUAVCollectionWindowEnd(int roundNum) const;
-    int getNodeUAVVisits(int nodeId) const;
+    // RL Convergence Metrics
+    void recordRLReward(int roundNum, double reward);
+    void recordRLAction(int roundNum, bool isExploration);
+    void recordRLStateVisit(const std::string& stateHash);
+    void writeRLConvergenceData(int roundNum);
     
 private:
     // Global timing parameters

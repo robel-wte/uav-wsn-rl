@@ -83,10 +83,12 @@ void UAVNode::initialize()
     beaconMsg = new cMessage("beacon");
     contactTimer = new cMessage("contactTimer");
     
-    // Initialize RL parameters
-    alpha = 0.1;
-    gamma = 0.9;
-    epsilon = 0.1;
+    // Initialize RL parameters (from parameters-init.txt)
+    alpha_uav = 0.2;
+    gamma_uav = 0.9;
+    epsilon_uav = 0.3;
+    epsilon_min = 0.05;
+    epsilon_decay_uav = 0.001;
     
     // Initialize last states
     lastUAVState = {0,0,0,0};
@@ -218,13 +220,35 @@ void UAVNode::handleMessage(cMessage *msg)
         }
         return;
     }
-    else if (!strcmp(msg->getName(), "CH_RESPONSE")) {
-        int chID = msg->par("chID");
-        double chX = msg->par("locationX");
-        double chY = msg->par("locationY");
-        int dataSize = msg->par("dataSize");
+    else if (!strcmp(msg->getName(), "STATUS")) {
+        int nodeID = msg->par("nodeID");
+        int queueSize = msg->par("queueSize");
+        double avgPacketAge = msg->par("avgPacketAge");
+        double residualEnergy = msg->par("residualEnergy");
         
-        handleCHResponse(chID, Location(chX, chY, 0), dataSize);
+        // Get node location
+        cModule *node = getParentModule()->getSubmodule("node", nodeID);
+        Location nodeLoc(0, 0, 0);
+        if (node) {
+            auto *sensor = check_and_cast<SensorNode*>(node);
+            nodeLoc = sensor->getLocation();
+        }
+        
+        // Store CH information for scheduling
+        DiscoveredCH ch;
+        ch.id = nodeID;
+        ch.location = nodeLoc;
+        ch.dataSize = queueSize;
+        
+        // Calculate priority: w1*Q + w2*A + w3*(1/E)
+        double w1 = 0.5, w2 = 0.3, w3 = 0.2;
+        ch.priority = w1 * queueSize + w2 * avgPacketAge + w3 * (1.0 / residualEnergy);
+        
+        discoveredCHs.push_back(ch);
+        
+        EV << "UAV received STATUS from node " << nodeID << ": queue=" << queueSize 
+           << ", age=" << avgPacketAge << ", energy=" << residualEnergy << ", priority=" << ch.priority << endl;
+        
         delete msg;
         return;
     }
@@ -296,7 +320,7 @@ void UAVNode::startRound()
        << " (collection window: " << contactWindowStart << "-" << collectionWindowEnd 
        << "), roundEndTime=" << roundEndTime << ", nextRoundStartTime=" << nextRoundStartTime << endl;
     
-    // RL Phase 8: UAV Scheduling
+    // RL: Observe state at round start
     performUAVRLScheduling();
 }
 
@@ -326,11 +350,68 @@ void UAVNode::enterNetwork()
 
 void UAVNode::generateRandomWaypoint()
 {
-    double x = uniform(areaMinX, areaMaxX);
-    double y = uniform(areaMinY, areaMaxY);
-    currentWaypoint = Location(x, y, uavHeight);
+    // RCLF (Routing-driven Clustering Flow) Mobility Model
+    // Combines random waypoint with flow vector toward high-priority CHs
     
-    EV << "UAV generated waypoint at (" << x << "," << y << ")" << endl;
+    // Calculate flow vector if CHs are known
+    Location flowVector(0, 0, 0);
+    if (!discoveredCHs.empty()) {
+        calculateAdaptivePriorities();
+        sortCHsByPriority();
+        
+        // Flow vector: Σ(P_i * d̂_i) where d̂_i is unit vector toward CH i
+        double totalPriority = 0.0;
+        for (const auto& ch : discoveredCHs) {
+            totalPriority += ch.priority;
+        }
+        
+        if (totalPriority > 0) {
+            for (const auto& ch : discoveredCHs) {
+                double weight = ch.priority / totalPriority;
+                Location direction = ch.location - currentPos;
+                double dist = direction.magnitude();
+                if (dist > 0) {
+                    direction = direction / dist; // Unit vector
+                    flowVector = flowVector + (direction * weight);
+                }
+            }
+        }
+    }
+    
+    // RCLF velocity: α * v_rand + (1-α) * v_flow
+    double alpha = 0.7; // Balance between random and flow (from system model)
+    
+    // Random component
+    double randX = uniform(areaMinX, areaMaxX);
+    double randY = uniform(areaMinY, areaMaxY);
+    Location randomWaypoint(randX, randY, uavHeight);
+    Location v_rand = randomWaypoint - currentPos;
+    double randDist = v_rand.magnitude();
+    if (randDist > 0) v_rand = v_rand / randDist; // Unit vector
+    
+    // Flow component (already unit vector from above)
+    Location v_flow = flowVector;
+    double flowDist = v_flow.magnitude();
+    if (flowDist > 0) v_flow = v_flow / flowDist;
+    
+    // Combined velocity vector
+    Location combinedVector = (v_rand * alpha) + (v_flow * (1 - alpha));
+    double combinedMag = combinedVector.magnitude();
+    if (combinedMag > 0) combinedVector = combinedVector / combinedMag;
+    
+    // Generate waypoint along combined direction with random distance
+    double waypointDist = uniform(50, 150); // Adaptive waypoint distance
+    Location waypoint = currentPos + (combinedVector * waypointDist);
+    
+    // Clamp to area boundaries
+    waypoint.x = std::max(areaMinX, std::min(areaMaxX, waypoint.x));
+    waypoint.y = std::max(areaMinY, std::min(areaMaxY, waypoint.y));
+    waypoint.z = uavHeight;
+    
+    currentWaypoint = waypoint;
+    
+    EV << "UAV RCLF waypoint at (" << waypoint.x << "," << waypoint.y 
+       << ") [random: (" << randX << "," << randY << "), flow: (" << flowVector.x << "," << flowVector.y << ")]" << endl;
 }
 
 void UAVNode::executeRandomWaypoint()
@@ -406,16 +487,20 @@ void UAVNode::sendBeacon()
     for (int i = 0; i < numNodes; i++) {
         cModule *node = getParentModule()->getSubmodule("node", i);
         if (node) {
-            cMessage *beacon = new cMessage("DISCOVERY_BEACON");
-            beacon->addPar("uavX") = currentPos.x;
-            beacon->addPar("uavY") = currentPos.y;
-            beacon->addPar("uavZ") = currentPos.z;
+            cMessage *hello = new cMessage("HELLO");
+            hello->addPar("uavID") = getIndex();
+            hello->addPar("currentPosX") = currentPos.x;
+            hello->addPar("currentPosY") = currentPos.y;
+            hello->addPar("currentPosZ") = currentPos.z;
+            hello->addPar("missionTimeRemain") = roundEndTime.dbl() - simTime().dbl();
+            hello->addPar("velocityX") = (currentWaypoint.x - currentPos.x) / (currentPos.distanceTo(currentWaypoint) / searchSpeed);
+            hello->addPar("velocityY") = (currentWaypoint.y - currentPos.y) / (currentPos.distanceTo(currentWaypoint) / searchSpeed);
             
-            sendDirect(beacon, node, "directIn");
+            sendDirect(hello, node, "directIn");
         }
     }
     
-    EV << "UAV broadcast beacon from (" << currentPos.x << "," << currentPos.y << ")" << endl;
+    EV << "UAV broadcast HELLO from (" << currentPos.x << "," << currentPos.y << ")" << endl;
 }
 
 void UAVNode::handleCHResponse(int chId, Location chLoc, int dataSize)
@@ -694,6 +779,141 @@ void UAVNode::finish()
     }
 }
 
+// RL Functions Implementation
+UAVNode::UAVState UAVNode::observeUAVState() {
+    UAVState state;
+    
+    // Calculate average CH queue size
+    if (!discoveredCHs.empty()) {
+        int totalQueue = 0;
+        for (const auto& ch : discoveredCHs) {
+            totalQueue += ch.dataSize / 1000; // Approximate queue in KB
+        }
+        state.chQueue = totalQueue / discoveredCHs.size();
+    } else {
+        state.chQueue = 0;
+    }
+    
+    // Calculate average packet age (simplified)
+    state.chAge = (int)(simTime().dbl() - roundStartTime.dbl()) / 10; // Age in 10s units
+    
+    // Calculate average energy level
+    int numNodes = getParentModule()->par("numNodes");
+    double totalEnergy = 0.0;
+    int count = 0;
+    for (int i = 0; i < numNodes; i++) {
+        cModule *node = getParentModule()->getSubmodule("node", i);
+        if (node) {
+            auto *sensor = check_and_cast<SensorNode*>(node);
+            totalEnergy += sensor->getEnergy();
+            count++;
+        }
+    }
+    state.chEnergy = count > 0 ? (int)(totalEnergy / count * 10) : 0; // Energy in 0.1 units
+    
+    // Calculate average distance to CHs
+    if (!discoveredCHs.empty()) {
+        double totalDist = 0.0;
+        for (const auto& ch : discoveredCHs) {
+            totalDist += currentPos.distanceTo(ch.location);
+        }
+        state.chDistance = (int)(totalDist / discoveredCHs.size() / 10); // Distance in 10m units
+    } else {
+        state.chDistance = 10; // Default 100m
+    }
+    
+    return state;
+}
+
+UAVNode::UAVAction UAVNode::selectUAVAction(UAVState state) {
+    auto stateKey = std::make_tuple(state.chQueue, state.chAge, state.chEnergy, state.chDistance);
+    
+    // Epsilon decay
+    epsilon_uav = std::max(epsilon_min, epsilon_uav * exp(-epsilon_decay_uav * currentRound));
+    
+    // Epsilon-greedy
+    if (uniform(0,1) < epsilon_uav) {
+        return static_cast<UAVAction>(intrand(2)); // Random action
+    }
+    
+    // Greedy
+    double maxQ = -1e9;
+    UAVAction bestAction = SELECT_CH;
+    for (int a = 0; a < 2; a++) {
+        UAVAction action = static_cast<UAVAction>(a);
+        double q = qTableUAV[stateKey][action];
+        if (q > maxQ) {
+            maxQ = q;
+            bestAction = action;
+        }
+    }
+    return bestAction;
+}
+
+double UAVNode::computeUAVReward(UAVAction action) {
+    double reward = 0.0;
+    
+    // Reward for data collection efficiency
+    if (action == SELECT_CH && !collectedData.empty()) {
+        int dataCollected = 0;
+        for (const auto& buffer : collectedData) {
+            dataCollected += buffer.totalDataSize;
+        }
+        reward += dataCollected / 1000.0; // Reward per KB collected
+    }
+    
+    // Penalty for time spent
+    double timeSpent = simTime().dbl() - roundStartTime.dbl();
+    reward -= timeSpent / 10.0; // Penalty for time
+    
+    // Penalty for energy consumption
+    reward -= totalFlightDistance / 100.0; // Penalty for distance flown
+    
+    return reward;
+}
+
+void UAVNode::updateUAVQTable(UAVState state, UAVAction action, double reward, UAVState nextState) {
+    auto stateKey = std::make_tuple(state.chQueue, state.chAge, state.chEnergy, state.chDistance);
+    auto nextStateKey = std::make_tuple(nextState.chQueue, nextState.chAge, nextState.chEnergy, nextState.chDistance);
+    
+    // Find max Q for next state
+    double maxNextQ = -1e9;
+    for (int a = 0; a < 2; a++) {
+        UAVAction nextAction = static_cast<UAVAction>(a);
+        double q = qTableUAV[nextStateKey][nextAction];
+        if (q > maxNextQ) maxNextQ = q;
+    }
+    
+    // Q-learning update
+    double currentQ = qTableUAV[stateKey][action];
+    double newQ = currentQ + alpha_uav * (reward + gamma_uav * maxNextQ - currentQ);
+    qTableUAV[stateKey][action] = newQ;
+}
+
+void UAVNode::performUAVRLScheduling() {
+    UAVState currentState = observeUAVState();
+    UAVAction action = selectUAVAction(currentState);
+    
+    // Execute action
+    if (action == SELECT_CH) {
+        // Select and contact CH
+        contactAllCHsInRange();
+    } else {
+        // Skip and move to next waypoint
+        executeRandomWaypoint();
+    }
+    
+    // Compute reward and update Q-table
+    double reward = computeUAVReward(action);
+    UAVState nextState = observeUAVState();
+    updateUAVQTable(lastUAVState, lastUAVAction, lastUAVReward, currentState);
+    
+    // Update last state
+    lastUAVState = currentState;
+    lastUAVAction = action;
+    lastUAVReward = reward;
+}
+
 // Duplicate UAVNode destructor removed (see above for correct implementation)
 
 void UAVNode::calculateAdaptivePriorities()
@@ -917,97 +1137,4 @@ UAVNode::~UAVNode()
         delete contactTimer;
         contactTimer = nullptr;
     }
-}
-
-// RL Implementation for UAV Agent
-
-UAVNode::UAVState UAVNode::observeUAVState() {
-    UAVState state;
-    
-    // Average CH metrics (simplified)
-    if (discoveredCHs.empty()) {
-        state = {0,0,0,0};
-        return state;
-    }
-    
-    double avgQueue = 0, avgAge = 0, avgEnergy = 0, avgDist = 0;
-    for (auto& ch : discoveredCHs) {
-        avgQueue += ch.dataSize; // Approximate
-        avgDist += currentPos.distanceTo(ch.location);
-    }
-    avgQueue /= discoveredCHs.size();
-    avgDist /= discoveredCHs.size();
-    
-    // Discretize
-    state.chQueue = avgQueue < 1000 ? 0 : 1; // LOW/HIGH
-    state.chAge = 0; // Not tracked
-    state.chEnergy = 0; // Not tracked
-    state.chDistance = avgDist < commRadius ? 0 : 1; // NEAR/FAR
-    
-    return state;
-}
-
-UAVNode::UAVAction UAVNode::selectUAVAction(UAVState state) {
-    auto stateKey = std::make_tuple(state.chQueue, state.chAge, state.chEnergy, state.chDistance);
-    
-    // Epsilon-greedy
-    if (uniform(0,1) < epsilon) {
-        return static_cast<UAVAction>(intrand(2));
-    }
-    
-    // Greedy
-    double maxQ = -1e9;
-    UAVAction bestAction = SELECT_CH;
-    for (int a = 0; a < 2; a++) {
-        UAVAction action = static_cast<UAVAction>(a);
-        double q = qTableUAV[stateKey][action];
-        if (q > maxQ) {
-            maxQ = q;
-            bestAction = action;
-        }
-    }
-    return bestAction;
-}
-
-double UAVNode::computeUAVReward(UAVAction action) {
-    double reward = 0.0;
-    
-    if (action == SELECT_CH) {
-        reward += totalDataCollected * 0.001; // Reward for data collected
-    }
-    
-    // Penalty for flight distance
-    reward -= totalFlightDistance * 0.0001;
-    
-    return reward;
-}
-
-void UAVNode::updateUAVQTable(UAVState state, UAVAction action, double reward, UAVState nextState) {
-    auto stateKey = std::make_tuple(state.chQueue, state.chAge, state.chEnergy, state.chDistance);
-    auto nextStateKey = std::make_tuple(nextState.chQueue, nextState.chAge, nextState.chEnergy, nextState.chDistance);
-    
-    double maxNextQ = -1e9;
-    for (int a = 0; a < 2; a++) {
-        maxNextQ = std::max(maxNextQ, qTableUAV[nextStateKey][static_cast<UAVAction>(a)]);
-    }
-    
-    qTableUAV[stateKey][action] += alpha * (reward + gamma * maxNextQ - qTableUAV[stateKey][action]);
-}
-
-void UAVNode::performUAVRLScheduling() {
-    UAVState currentState = observeUAVState();
-    UAVAction action = selectUAVAction(currentState);
-    
-    // Execute action
-    if (action == SELECT_CH && !discoveredCHs.empty()) {
-        // Select top CHs based on priority
-        calculateAdaptivePriorities();
-        sortCHsByPriority();
-        // Contact top CHs
-        contactAllCHsInRange();
-    }
-    
-    // Store for update
-    lastUAVState = currentState;
-    lastUAVAction = action;
 }

@@ -149,6 +149,10 @@ void MetricsCollector::initialize(int numNodes, simtime_t startTime)
         uavTrajectoryFile.open(outputDir + "/uav_trajectory.csv");
         uavTrajectoryFile << "Time,X,Y,Z,Event\n";
     clusteringFile << "Round,ClusterID,MemberCount,ExpectedMembers,ReceivedMembers,AggregationCompletion,AvgMembersPerCluster,TotalClusters,UnclusteredNodes,AvgDistToCH,DeadlineHit\n";
+    
+    rlConvergenceFile.open(outputDir + "/rl_convergence.csv");
+    rlConvergenceFile << "Round,AvgReward,ExplorationRatio,TotalActions,UniqueStatesVisited\n";
+}
 }
 
 void MetricsCollector::finalize()
@@ -774,5 +778,39 @@ int MetricsCollector::getNodeUAVVisits(int nodeId) const
         return it->second;
     }
     return 0;
+}
+
+// RL Convergence Metrics Implementation
+void MetricsCollector::recordRLReward(int roundNum, double reward) {
+    roundRewards[roundNum] += reward;
+}
+
+void MetricsCollector::recordRLAction(int roundNum, bool isExploration) {
+    roundTotalActions[roundNum]++;
+    if (isExploration) {
+        roundExplorationActions[roundNum]++;
+    }
+}
+
+void MetricsCollector::recordRLStateVisit(const std::string& stateHash) {
+    stateSpaceCoverage[stateHash]++;
+}
+
+void MetricsCollector::writeRLConvergenceData(int roundNum) {
+    double avgReward = 0.0;
+    if (roundRewards.count(roundNum)) {
+        avgReward = roundRewards[roundNum];
+    }
+    
+    double explorationRatio = 0.0;
+    if (roundTotalActions.count(roundNum) && roundTotalActions[roundNum] > 0) {
+        explorationRatio = (double)roundExplorationActions[roundNum] / roundTotalActions[roundNum];
+    }
+    
+    int totalActions = roundTotalActions[roundNum];
+    int uniqueStates = stateSpaceCoverage.size();
+    
+    rlConvergenceFile << roundNum << "," << avgReward << "," << explorationRatio 
+                     << "," << totalActions << "," << uniqueStates << "\n";
 }
 

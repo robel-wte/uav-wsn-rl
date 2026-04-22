@@ -110,10 +110,12 @@ class UAVNode : public omnetpp::cSimpleModule
     UAVAction lastUAVAction;
     double lastUAVReward;
     
-    // RL Parameters
-    double alpha = 0.1;
-    double gamma = 0.9;
-    double epsilon = 0.1;
+    // RL Parameters (from parameters-init.txt)
+    double alpha_uav = 0.2;
+    double gamma_uav = 0.9;
+    double epsilon_uav = 0.3;
+    double epsilon_min = 0.05;
+    double epsilon_decay_uav = 0.001;
     
     // Helper functions for RL
     UAVState observeUAVState();

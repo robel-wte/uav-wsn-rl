@@ -156,10 +156,17 @@ class SensorNode : public omnetpp::cSimpleModule
     CHAction lastCHAction;
     double lastCHReward;
     
-    // RL Parameters
-    double alpha = 0.1;  // Learning rate
-    double gamma = 0.9;  // Discount factor
-    double epsilon = 0.1; // Exploration rate
+    // RL Parameters (from parameters-init.txt)
+    double alpha_node = 0.15;
+    double gamma_node = 0.6;
+    double epsilon_node = 0.2;
+    double epsilon_min = 0.05;
+    double epsilon_decay_node = 0.002;
+    
+    double alpha_ch = 0.1;
+    double gamma_ch = 0.85;
+    double epsilon_ch = 0.25;
+    double epsilon_decay_ch = 0.0015;
     
     // Helper functions for RL
     NodeState observeNodeState();
@@ -171,9 +178,9 @@ class SensorNode : public omnetpp::cSimpleModule
     void updateNodeQTable(NodeState state, NodeAction action, double reward, NodeState nextState);
     void updateCHQTable(CHState state, CHAction action, double reward, CHState nextState);
     
-    // RL execution
-    void performNodeRLRefinement();
-    void performCHRLRouting();
+    // UAV beacon tracking for enhanced state observation
+    std::vector<simtime_t> recentUAVBeacons;  // Timestamps of recent UAV beacons
+    double uavProximityHistory;  // Moving average of UAV proximity (0-1)
     
     // Helper function to discard old packets
     void discardExpiredPackets();
