@@ -1,0 +1,10 @@
+=== Simulation Summary ===
+Total Nodes: 100
+FND (First Node Death): Round 584
+LND (Last Node Death): Round 900
+Total Packets Generated: 67590
+Total Packets Received: 50747
+Overall PDR: 0.750806
+Average End-to-End Delay: 1161.94 s
+Total Energy Consumed: 50.0492 J
+Total Contact Events: 18566

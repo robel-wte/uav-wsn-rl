@@ -13,12 +13,12 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-PROJECT_DIR="/workspaces/uav-wsn-bm"
+PROJECT_DIR="$(pwd)"
 cd "$PROJECT_DIR"
 
 # Load OMNeT++ environment
 echo -e "${BLUE}Loading OMNeT++ environment...${NC}"
-source /workspaces/omnetpp-setup.sh
+# source /workspaces/omnetpp-setup.sh
 
 echo -e "${YELLOW}=========================================${NC}"
 echo -e "${YELLOW}  UAV-WSN-BM: Baseline S0 Runner (LND)   ${NC}"

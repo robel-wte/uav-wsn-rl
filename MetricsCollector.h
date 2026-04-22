@@ -15,6 +15,7 @@ class MetricsCollector
 {
 private:
     static MetricsCollector* instance;
+    std::string outputDir;
     
     // CSV file streams
     std::ofstream stabilityFile;
@@ -109,6 +110,8 @@ public:
     void finalize();
     void setRoundDuration(double seconds);
     void setCollectionWindow(double seconds);
+    
+    std::string getOutputDir() const { return outputDir; }
     
     // Round management
     bool claimCoordinator(int nodeId);

@@ -1,56 +1,10 @@
-Scenario: S0-Baseline
-====================
-
-Description:
-Baseline (P=0.1, N=100, v=10m/s, E=0.5J, Size=2000b)
-
-Network Lifetime:
------------------
-FND (First Node Death): 584 rounds
-LND (Last Node Death): 900 rounds
-HNA (Half Nodes Alive): 670 rounds
-Lifetime (LND-FND): 316 rounds
-
-Energy:
--------
-Total Energy Consumed: 50.0492 J
-Mean Energy Per Round: 0.055487 J
-Std Energy Per Round: 0.033428 J
-
-Performance Metrics:
--------------------
-Mean PDR: 0.7993
-Std PDR: 0.1631
-Min PDR: 0.0000
-Max PDR: 1.0000
-
-Mean Delay: 1161.94 s
-Median Delay: 776.47 s
-Std Delay: 846.01 s
-P95 Delay: 3101.88 s
-
-Mean Throughput: 145.38 bps (0.1454 kbps)
-Peak Throughput: 731.27 bps (0.7313 kbps)
-Zero Throughput Rounds: 182 (20.18%)
-
-Clustering Metrics:
-------------------
-Mean Cluster Heads: 7.31
-Std Cluster Heads: 4.73
-Mean Unclustered Nodes: 29.26
-Unclustered Percentage: 29.26%
-
-Contact Performance:
--------------------
-Total Contacts: 18566
-Contact Success Rate: 100.00%
-Mean Contact Duration: 26.06 s
-Std Contact Duration: 8.94 s
-
-Control Overhead:
-----------------
-Mean Control Ratio: 0.7162
-Total Control Packets: 161178
-Total Data Packets: 35568
-Packet Ratio: 161178:35568
-
+=== Simulation Summary ===
+Total Nodes: 100
+FND (First Node Death): Round -1
+LND (Last Node Death): Round -1
+Total Packets Generated: 95
+Total Packets Received: 0
+Overall PDR: 0
+Average End-to-End Delay: 0 s
+Total Energy Consumed: 0.0205058 J
+Total Contact Events: 2

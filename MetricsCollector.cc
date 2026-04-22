@@ -92,37 +92,61 @@ void MetricsCollector::initialize(int numNodes, simtime_t startTime)
     fndCandidateRound = -1;
     totalExpiredPackets = 0;
     
-    // Create results directory if it doesn't exist
-    system("mkdir -p results");
+    // Get output directory from OMNeT++
+    cConfigurationEx *config = cSimulation::getActiveEnvir()->getConfigEx();
+    cConfigOption *outputDirOption = cConfigOption::find("outputdir");
+    if (outputDirOption) {
+        outputDir = config->getAsPath(outputDirOption);
+    }
+    if (outputDir.empty()) {
+        outputDir = "results";
+    }
+    
+    // Prevent deeply nested output directories that could fill the drive
+    size_t slashCount = 0;
+    size_t pos = 0;
+    while ((pos = outputDir.find('/', pos)) != std::string::npos) {
+        slashCount++;
+        pos++;
+    }
+    if (slashCount > 1) {
+        // More than one level deep, flatten to results/lastDir
+        size_t lastSlash = outputDir.find_last_of('/');
+        std::string lastDir = (lastSlash != std::string::npos) ? outputDir.substr(lastSlash + 1) : outputDir;
+        outputDir = "results/" + lastDir;
+    }
+    
+    // Always create the output directory
+    system(("mkdir -p " + outputDir).c_str());
     
     // Open CSV files with headers
-    stabilityFile.open("results/stability.csv");
+    stabilityFile.open(outputDir + "/stability.csv");
     stabilityFile << "Round,Time,AliveNodes,DeadNodes\n";
     
-    energyFile.open("results/energy.csv");
+    energyFile.open(outputDir + "/energy.csv");
     energyFile << "Round,EnergyConsumed,AvgResidualEnergy,TotalNetworkEnergy\n";
     
-    pdrFile.open("results/pdr.csv");
+    pdrFile.open(outputDir + "/pdr.csv");
     pdrFile << "Round,PacketsGenerated,PacketsReceived,PDR\n";
     
-    throughputFile.open("results/throughput.csv");
+    throughputFile.open(outputDir + "/throughput.csv");
     throughputFile << "Time,Throughput_bps,Throughput_kbps\n";
     
-    delayFile.open("results/delay.csv");
+    delayFile.open(outputDir + "/delay.csv");
     delayFile << "PacketID,SourceNode,GenerationTime,ReceptionTime,Delay_s\n";
     
-    contactFile.open("results/contact.csv");
+    contactFile.open(outputDir + "/contact.csv");
     contactFile << "Instance,CHID,StartTime,Duration_s,Successful\n";
     
-    overheadFile.open("results/overhead.csv");
+    overheadFile.open(outputDir + "/overhead.csv");
     overheadFile << "Round,ControlPackets,DataPackets,ControlRatio,OverheadRatio\n";
     
-    networkFile.open("results/network.csv");
+    networkFile.open(outputDir + "/network.csv");
     networkFile << "Round,Time,TotalEnergy,AliveNodes,DeadNodes,AvgEnergy\n";
     
-    clusteringFile.open("results/clustering.csv");
+    clusteringFile.open(outputDir + "/clustering.csv");
     
-        uavTrajectoryFile.open("results/uav_trajectory.csv");
+        uavTrajectoryFile.open(outputDir + "/uav_trajectory.csv");
         uavTrajectoryFile << "Time,X,Y,Z,Event\n";
     clusteringFile << "Round,ClusterID,MemberCount,ExpectedMembers,ReceivedMembers,AggregationCompletion,AvgMembersPerCluster,TotalClusters,UnclusteredNodes,AvgDistToCH,DeadlineHit\n";
 }
@@ -164,7 +188,7 @@ void MetricsCollector::finalize()
 
     // Rewrite PDR file with final per-round delivery (accounts for late arrivals)
     {
-        std::ofstream pdrOut("results/pdr.csv");
+        std::ofstream pdrOut(outputDir + "/pdr.csv");
         pdrOut << "Round,PacketsGenerated,PacketsReceived,PDR\n";
         for (int r = 1; r <= currentRound; ++r) {
             int genCount = roundGeneratedMap[r];
@@ -177,7 +201,7 @@ void MetricsCollector::finalize()
     }
     
     // Write summary file
-    std::ofstream summaryFile("results/summary.txt");
+    std::ofstream summaryFile(outputDir + "/summary.txt");
     summaryFile << "=== Simulation Summary ===\n";
     summaryFile << "Total Nodes: " << totalNodes << "\n";
     summaryFile << "FND (First Node Death): Round " << fndRound << "\n";

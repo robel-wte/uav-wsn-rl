@@ -74,12 +74,13 @@ void SensorNode::initialize()
     myLocation = Location(uniform(0, areaX), uniform(0, areaY), 0);
 
     // Persist one-shot topology snapshot for plotting
+    std::string topoPath = metrics->getOutputDir() + "/topology.csv";
     if (getIndex() == 0) {
-        std::ofstream topoInit("results/topology.csv", std::ios::trunc);
+        std::ofstream topoInit(topoPath, std::ios::trunc);
         topoInit << "NodeID,X,Y\n";
     }
     {
-        std::ofstream topo("results/topology.csv", std::ios::app);
+        std::ofstream topo(topoPath, std::ios::app);
         topo << getIndex() << "," << myLocation.x << "," << myLocation.y << "\n";
     }
     
@@ -958,10 +959,8 @@ void SensorNode::finish()
     auto safeCancelAndDelete = [this](cMessage *&msg) {
         if (!msg) return;
 
-        // If this is a self-message we own, attempt to cancel and delete it safely.
+        // For self-messages, check ownership before cancelling
         if (msg->isSelfMessage()) {
-            // Ensure the self-message is actually scheduled for THIS module.
-            // If it's scheduled for another module, deleting it here causes double-free.
             cModule *arrival = msg->getArrivalModule();
             if (arrival != this) {
                 EV << "Warning: self-message '" << msg->getName() << "' is owned by another module ("
@@ -974,22 +973,13 @@ void SensorNode::finish()
             if (msg->isScheduled()) {
                 cancelEvent(msg);
             }
-            // Do not delete messages here: ownership may be shared or managed
-            // by the simulation kernel or other modules. Null our pointer to
-            // avoid further access; the message will be cleaned up by OMNeT++
-            // at simulation shutdown or by its rightful owner.
+            delete msg;
             msg = nullptr;
             return;
         }
 
-        // Non-self messages may be owned/managed elsewhere. Do NOT delete them
-        // here to avoid double-free; just clear our pointer and warn if it was
-        // still scheduled (indicates an unexpected ownership situation).
-        if (msg->isScheduled()) {
-            EV << "Warning: non-self message '" << msg->getName() << "' is still scheduled in finish(); leaving it to its owner" << endl;
-        } else {
-            EV << "Warning: not deleting non-self message '" << msg->getName() << "' in finish()" << endl;
-        }
+        // Non-self messages: just clear pointer, don't delete
+        EV << "Warning: non-self message '" << msg->getName() << "' in finish(); not deleting" << endl;
         msg = nullptr;
     };
     
