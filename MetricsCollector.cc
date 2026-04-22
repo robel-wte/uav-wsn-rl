@@ -201,11 +201,26 @@ void MetricsCollector::finalize()
     }
     
     // Write summary file
+    // First, ensure stability metrics are up to date
+    int finalAlive = 0;
+    for (double e : nodeEnergies) {
+        if (e > 0) finalAlive++;
+    }
+    aliveNodes = finalAlive;
+    if (aliveNodes < totalNodes && !fndRecorded) {
+        fndRound = fndCandidateRound >= 0 ? fndCandidateRound : currentRound;
+        fndRecorded = true;
+    }
+    if (aliveNodes == 0 && !lndRecorded) {
+        lndRound = currentRound;
+        lndRecorded = true;
+    }
+
     std::ofstream summaryFile(outputDir + "/summary.txt");
     summaryFile << "=== Simulation Summary ===\n";
     summaryFile << "Total Nodes: " << totalNodes << "\n";
-    summaryFile << "FND (First Node Death): Round " << fndRound << "\n";
-    summaryFile << "LND (Last Node Death): Round " << lndRound << "\n";
+    summaryFile << "FND (First Node Death): Round " << (fndRecorded ? std::to_string(fndRound) : "-1") << "\n";
+    summaryFile << "LND (Last Node Death): Round " << (lndRecorded ? std::to_string(lndRound) : "-1") << "\n";
     summaryFile << "Total Packets Generated: " << totalPacketsGenerated << "\n";
     summaryFile << "Total Packets Received: " << totalPacketsReceived << "\n";
     summaryFile << "Overall PDR: " << calculatePDR() << "\n";

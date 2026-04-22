@@ -7,31 +7,29 @@ Setting up Cmdenv...
 Loading NED files from .:  1
 
 Preparing for running configuration General, run #0...
-Assigned runID=General-0-20260422-06:27:19-16762
+Assigned runID=General-0-20260422-12:15:08-5509
 Setting up network "UavWsnNetwork"...
 Initializing...
 MetricsCollector::setCollectionWindow(691) - uavCollectionWindowDuration now = 691
 
 Running simulation...
-** Event #0   t=0   Elapsed: 1.1e-05s (0m 00s)  0% completed  (0% total)   ev/sec=0
-** Event #1750272   t=60477   Elapsed: 2.00007s (0m 02s)  5% completed  (5% total)   ev/sec=875108
-** Event #3476992   t=119356   Elapsed: 4.00036s (0m 04s)  10% completed  (10% total)   ev/sec=863237
-** Event #5163264   t=177406.307474616491   Elapsed: 6.00048s (0m 06s)  15% completed  (15% total)   ev/sec=843084
-** Event #6867200   t=236011   Elapsed: 8.00055s (0m 08s)  20% completed  (20% total)   ev/sec=851940
-** Event #8573952   t=294325   Elapsed: 10.0009s (0m 10s)  25% completed  (25% total)   ev/sec=853213
-** Event #10220288   t=350977   Elapsed: 12.0013s (0m 12s)  30% completed  (30% total)   ev/sec=823035
-** Event #11936512   t=409718.787251669358   Elapsed: 14.0016s (0m 14s)  35% completed  (35% total)   ev/sec=857961
-** Event #13557248   t=463582   Elapsed: 16.0019s (0m 16s)  39% completed  (39% total)   ev/sec=810262
-** Event #15245824   t=523399   Elapsed: 18.0019s (0m 18s)  45% completed  (45% total)   ev/sec=844265
-** Event #17584640   t=644003   Elapsed: 20.002s (0m 20s)  55% completed  (55% total)   ev/sec=1.16935e+06
-** Event #20329728   t=798569   Elapsed: 22.0022s (0m 22s)  68% completed  (68% total)   ev/sec=1.37241e+06
-** Event #22986240   t=948830   Elapsed: 24.0024s (0m 24s)  81% completed  (81% total)   ev/sec=1.32814e+06
-** Event #25656832   t=1099979   Elapsed: 26.0026s (0m 26s)  94% completed  (94% total)   ev/sec=1.33519e+06
-** Event #26738728   t=1161000   Elapsed: 26.7779s (0m 26s)  100% completed  (100% total)   ev/sec=1.39534e+06
+** Event #0   t=0   Elapsed: 9e-06s (0m 00s)  0% completed  (0% total)   ev/sec=0
+** Event #1810688   t=62521.861775699258   Elapsed: 2.00012s (0m 02s)  5% completed  (5% total)   ev/sec=905292
+** Event #3674624   t=125958   Elapsed: 4.00017s (0m 04s)  10% completed  (10% total)   ev/sec=931945
+** Event #5527296   t=189928.998844967005   Elapsed: 6.00018s (0m 06s)  16% completed  (16% total)   ev/sec=926335
+** Event #7356928   t=252859.03325715571   Elapsed: 8.0002s (0m 08s)  21% completed  (21% total)   ev/sec=914804
+** Event #9189632   t=315337.749255390952   Elapsed: 10.0003s (0m 10s)  27% completed  (27% total)   ev/sec=916330
+** Event #10978304   t=376993   Elapsed: 12.0004s (0m 12s)  32% completed  (32% total)   ev/sec=894284
+** Event #12787456   t=438654   Elapsed: 14.0004s (0m 14s)  37% completed  (37% total)   ev/sec=904557
+** Event #14600448   t=498412   Elapsed: 16.0007s (0m 16s)  42% completed  (42% total)   ev/sec=906373
+** Event #16784640   t=599975   Elapsed: 18.0009s (0m 18s)  51% completed  (51% total)   ev/sec=1.09198e+06
+** Event #19442176   t=748349   Elapsed: 20.0009s (0m 20s)  64% completed  (64% total)   ev/sec=1.32874e+06
+** Event #22094592   t=898520   Elapsed: 22.001s (0m 22s)  77% completed  (77% total)   ev/sec=1.32614e+06
+** Event #24755200   t=1048905   Elapsed: 24.0011s (0m 24s)  90% completed  (90% total)   ev/sec=1.33026e+06
+** Event #26738728   t=1161000   Elapsed: 25.4809s (0m 25s)  100% completed  (100% total)   ev/sec=1.3404e+06
 
 <!> Simulation time limit reached -- at t=1161000s, event #26738728
 
 Calling finish() at end of Run #0...
-<!> Error: cancelEvent(): Cannot cancel another module's self-message -- in module (SensorNode) UavWsnNetwork.node[37] (id=41), during finalization
 
 End.

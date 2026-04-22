@@ -81,32 +81,33 @@ for sca in results/*.sca; do
     fi
 done
 
+# Move summary.txt
+if [ -f "results/summary.txt" ]; then
+    mv "results/summary.txt" "$RESULTS_DIR/" 2>/dev/null || true
+fi
+
 # Check if simulation produced results
 if [ -f "$RESULTS_DIR/stability.csv" ]; then
     echo -e "${GREEN}✓ Results saved to $RESULTS_DIR${NC}"
     
-    # Step 4: Extract metrics
-    echo -e "\n${BLUE}Step 4: Extracting metrics...${NC}"
+    # Step 4: Display summary
+    echo -e "\n${BLUE}Step 4: Displaying summary...${NC}"
     
-    python3 extract_metrics.py "$RESULTS_DIR" > /dev/null 2>&1
-    
-    if [ -f "$RESULTS_DIR/metrics_summary.csv" ]; then
-        echo -e "${GREEN}✓ Metrics extracted${NC}"
+    if [ -f "$RESULTS_DIR/summary.txt" ]; then
+        echo -e "${GREEN}✓ Summary available${NC}"
         
         # Display summary
         echo -e "\n${BLUE}Baseline S0 Results Summary:${NC}"
         echo "======================================"
-        cat "$RESULTS_DIR/metrics_summary.csv" | tail -1 | tr ',' '\n' | while read line; do
-            echo "  $line"
-        done
+        cat "$RESULTS_DIR/summary.txt"
     else
-        echo -e "${YELLOW}⚠ Metrics extraction incomplete${NC}"
+        echo -e "${YELLOW}⚠ Summary not found${NC}"
     fi
     
     # Step 5: Generate plots
     echo -e "\n${BLUE}Step 5: Generating plots...${NC}"
     
-    python3 generate_scenario_plots.py "$RESULTS_DIR" > /dev/null 2>&1
+    python3 generate_s0_plots.py > /dev/null 2>&1
     
     if [ -f "plots/scenarios/S0-Baseline/fnd_lnd.png" ] 2>/dev/null || [ -f "plots/S0-Baseline/fnd_lnd.png" ] 2>/dev/null; then
         echo -e "${GREEN}✓ Plots generated${NC}"
